@@ -1,0 +1,694 @@
+<!--
+  /////////////////////////////////////////////////////////////////////////////
+
+  jsonviewer2 - Made by 5quirre1 :3
+
+  schools are stupid and like to block urls where i need to test stuff with
+  json like pikiapi. so this was made to still get json content yk and it works
+  pretty well so enjoy!!
+
+  the first jsonviewer i made didn't really have the best style so i made this
+  one that's supposed to mimic real json pages like on chrome and stuff yaknow
+  so yea lol
+
+  /////////////////////////////////////////////////////////////////////////////
+  ------------------------------------------------------------------------------
+  MIT License
+
+  Copyright (c) 2025 Squirrel
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+  ------------------------------------------------------------------------------
+
+-->
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>json viewer 2</title>
+    <link href="https://fonts.googleapis.com/css2?family=Consolas:wght@400;700&family=Menlo&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Consolas', 'Menlo', monospace;
+            font-size: 13px;
+            line-height: 18px;
+            margin: 0;
+            padding: 0;
+            color: #e8e8e8;
+            background-color: #1e1e1e;
+            overflow-x: hidden;
+            width: 100%;
+        }
+
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background-color: #252526;
+            border-bottom: 1px solid #3c3c3c;
+            height: 32px;
+            padding: 0 12px;
+            display: flex;
+            align-items: center;
+            z-index: 100;
+            justify-content: space-between;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-container {
+            font-size: 12px;
+        }
+
+        .url-display {
+            font-size: 12px;
+            color: #75bfff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 300px;
+        }
+
+        .json-container {
+            margin-top: 33px;
+            padding: 12px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            white-space: pre-wrap;
+            max-width: 100%;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .json-container pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            margin: 0;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: calc(100vh - 33px);
+            font-size: 16px;
+            color: #75bfff;
+        }
+
+        .error {
+            margin-top: 33px;
+            padding: 12px;
+            color: #f44336;
+        }
+
+        .json-string {
+            color: #ce9178;
+        }
+
+        .json-number {
+            color: #b5cea8;
+        }
+
+        .json-boolean {
+            color: #d19a66;
+        }
+
+        .json-null {
+            color: #569cd6;
+        }
+
+        .json-key {
+            color: #4ec9b0;
+        }
+
+        .json-punctuation {
+            color: #e8e8e8;
+        }
+
+        .pretty-print-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .pretty-print-checkbox input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            appearance: none;
+            border: 1px solid #888;
+            border-radius: 3px;
+            outline: none;
+            cursor: pointer;
+            background-color: #333;
+        }
+
+        .pretty-print-checkbox input[type="checkbox"]:checked {
+            background-color: #4CAF50;
+            border-color: #4CAF50;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Cpath fill='%23fff' d='M6.564.752l-6.14 6.14L.21 7.646 3.41 4.446 6.564.752z'/%3E%3C/svg%3E");
+            background-size: 80%;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .pretty-print-checkbox label {
+            font-size: 12px;
+            color: #eee;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .search-container {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .search-input {
+            background-color: #3c3c3c;
+            border: 1px solid #888;
+            border-radius: 3px;
+            color: #e8e8e8;
+            font-family: inherit;
+            font-size: 12px;
+            padding: 4px 8px;
+            width: 200px;
+            outline: none;
+        }
+
+        .search-input:focus {
+            border-color: #75bfff;
+        }
+
+        .search-button {
+            background-color: #3c3c3c;
+            border: 1px solid #888;
+            border-radius: 3px;
+            color: #e8e8e8;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 12px;
+            padding: 4px 8px;
+            outline: none;
+        }
+
+        .search-button:hover {
+            background-color: #4c4c4c;
+        }
+
+        .search-count {
+            color: #888;
+            font-size: 12px;
+            min-width: 60px;
+        }
+
+        .search-highlight {
+            background-color: #575728;
+        }
+
+        .search-highlight-active {
+            background-color: #875b00;
+        }
+
+        .action-button {
+            background-color: #3c3c3c;
+            border: 1px solid #888;
+            border-radius: 3px;
+            color: #e8e8e8;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 12px;
+            padding: 4px 8px;
+            outline: none;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: background-color 0.2s;
+        }
+
+        .action-button:hover {
+            background-color: #4c4c4c;
+        }
+
+        .action-button i {
+            font-size: 14px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="url-display" id="current-url">loading</div>
+            <div class="action-buttons">
+                <button class="action-button" id="copy-button">
+                    <i class="fas fa-copy"></i>
+                    copy
+                </button>
+                <button class="action-button" id="download-button">
+                    <i class="fas fa-download"></i>
+                    download
+                </button>
+            </div>
+            <button class="action-button" id="pretty-print-button">
+                <i class="fas fa-expand"></i>
+                pretty-print
+            </button>
+            <div class="search-container">
+                <input type="text" id="search-input" placeholder="search..." class="search-input">
+                <span id="search-count" class="search-count"></span>
+                <button id="search-prev" class="search-button">↑</button>
+                <button id="search-next" class="search-button">↓</button>
+            </div>
+        </div>
+        <div class="status-container" id="status">ready</div>
+    </div>
+    <div id="content">
+        <div class="loading" id="loading">loading json..</div>
+    </div>
+
+    <script>
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+        const corsProxies = [
+            'https://corsproxy.io/?',
+            'https://cors-anywhere.herokuapp.com/',
+            'https://api.allorigins.win/raw?url='
+        ];
+        function escapeHTML(str) {
+            if (typeof str !== 'string') return str;
+            return str
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+        function syntaxHighlightJson(jsonString, prettyPrint = false) {
+            try {
+                const parsed = JSON.parse(jsonString);
+                return syntaxHighlightParsedJson(parsed, prettyPrint);
+            } catch (e) {
+                return `<span class="json-string">"${escapeHTML(jsonString)}"</span>`;
+            }
+        }
+        function syntaxHighlightParsedJson(data, prettyPrint = false, depth = 0) {
+            const baseIndent = '    '.repeat(depth);
+            const childIndent = '    '.repeat(depth + 1);
+            if (data === null) return `<span class="json-null">null</span>`;
+            if (typeof data === 'boolean') return `<span class="json-boolean">${data}</span>`;
+            if (typeof data === 'number') return `<span class="json-number">${data}</span>`;
+            if (typeof data === 'string') return `<span class="json-string">"${escapeHTML(data)}"</span>`;
+            if (Array.isArray(data)) {
+                if (data.length === 0) return `<span class="json-punctuation">[]</span>`;
+                let result = `<span class="json-punctuation">[</span>`;
+                if (prettyPrint) {
+                    result += '\n';
+                    data.forEach((item, i) => {
+                        result += childIndent + syntaxHighlightParsedJson(item, prettyPrint, depth + 1);
+                        if (i < data.length - 1) result += `<span class="json-punctuation">,</span>`;
+                        result += '\n';
+                    });
+                    result += baseIndent + `<span class="json-punctuation">]</span>`;
+                } else {
+                    data.forEach((item, i) => {
+                        result += syntaxHighlightParsedJson(item, prettyPrint, depth);
+                        if (i < data.length - 1) result += `<span class="json-punctuation">,</span>`;
+                    });
+                    result += `<span class="json-punctuation">]</span>`;
+                }
+                return result;
+            }
+            if (typeof data === 'object') {
+                const keys = Object.keys(data);
+                if (keys.length === 0) return `<span class="json-punctuation">{}</span>`;
+                let result = `<span class="json-punctuation">{</span>`;
+                if (prettyPrint) {
+                    result += '\n';
+                    keys.forEach((key, i) => {
+                        result += childIndent +
+                            `<span class="json-key">"${escapeHTML(key)}"</span>` +
+                            `<span class="json-punctuation">: </span>` +
+                            syntaxHighlightParsedJson(data[key], prettyPrint, depth + 1);
+                        if (i < keys.length - 1) result += `<span class="json-punctuation">,</span>`;
+                        result += '\n';
+                    });
+                    result += baseIndent + `<span class="json-punctuation">}</span>`;
+                } else {
+                    keys.forEach((key, i) => {
+                        result += `<span class="json-key">"${escapeHTML(key)}"</span>` +
+                            `<span class="json-punctuation">:</span>` +
+                            syntaxHighlightParsedJson(data[key], prettyPrint, depth);
+                        if (i < keys.length - 1) result += `<span class="json-punctuation">,</span>`;
+                    });
+                    result += `<span class="json-punctuation">}</span>`;
+                }
+                return result;
+            }
+            return escapeHTML(String(data));
+        }
+
+        function renderJson(data, prettyPrint) {
+            const contentEl = document.getElementById('content');
+            let highlightedJSON = '';
+            if (typeof data === 'string') {
+                try {
+                    const parsed = JSON.parse(data);
+                    highlightedJSON = syntaxHighlightParsedJson(parsed, prettyPrint);
+                } catch (e) {
+                    highlightedJSON = syntaxHighlightJson(data, prettyPrint);
+                }
+            } else {
+                highlightedJSON = syntaxHighlightParsedJson(data, prettyPrint);
+            }
+            contentEl.innerHTML = `<div class="json-container">${prettyPrint ? '<pre>' + highlightedJSON + '</pre>' : highlightedJSON}</div>`;
+        }
+
+        function showError(message) {
+            const contentEl = document.getElementById('content');
+            contentEl.innerHTML = `<div class="error">${message}</div>`;
+            document.getElementById('status').textContent = 'Error';
+        }
+
+        async function fetchWithCorsProxy(url, proxyIndex = 0) {
+            if (proxyIndex >= corsProxies.length) {
+                throw new Error('all proxies failed');
+            }
+            const proxyUrl = corsProxies[proxyIndex] + encodeURIComponent(url);
+            document.getElementById('status').textContent = `trying proxy ${proxyIndex + 1}/${corsProxies.length}`;
+            try {
+                const response = await fetch(proxyUrl);
+                if (!response.ok) {
+                    throw new Error(`http error, status: ${response.status}`);
+                }
+                const text = await response.text();
+                try {
+                    const json = JSON.parse(text);
+                    return json;
+                } catch (e) {
+                    return text;
+                }
+            } catch (error) {
+                console.error(`proxy ${proxyIndex + 1} failed:`, error);
+                return fetchWithCorsProxy(url, proxyIndex + 1);
+            }
+        }
+
+        async function init() {
+            const url = getQueryParam('url');
+            const urlDisplay = document.getElementById('current-url');
+            const prettyPrintButton = document.getElementById('pretty-print-button');
+            let isPrettyPrinted = false;
+            const loadingIndicator = document.getElementById('loading');
+            let fetchedData = null;
+
+            if (!url) {
+                showError('no url given, add ?url=https://example.com/data.json to the url');
+                urlDisplay.textContent = 'no url given';
+                loadingIndicator.style.display = 'none';
+                return;
+            }
+
+            urlDisplay.textContent = url;
+
+            try {
+                document.getElementById('status').textContent = 'fetching..';
+                loadingIndicator.style.display = 'flex';
+                try {
+                    const directResponse = await fetch(url);
+                    if (directResponse.ok) {
+                        const text = await directResponse.text();
+                        try {
+                            fetchedData = JSON.parse(text);
+                        } catch (e) {
+                            fetchedData = text;
+                        }
+                        renderJson(fetchedData, isPrettyPrinted);
+                        document.getElementById('status').textContent = 'success (direct)';
+                        loadingIndicator.style.display = 'none';
+
+                        prettyPrintButton.addEventListener('click', () => {
+                            isPrettyPrinted = !isPrettyPrinted;
+                            renderJson(fetchedData, isPrettyPrinted);
+                            prettyPrintButton.innerHTML = isPrettyPrinted ?
+                                '<i class="fas fa-compress"></i> Compact' :
+                                '<i class="fas fa-expand"></i> Pretty-print';
+                        });
+                        return;
+                    }
+                } catch (directError) {
+                    console.log('direct fetch failed, trying proxies:', directError);
+                }
+
+                fetchedData = await fetchWithCorsProxy(url);
+                renderJson(fetchedData, isPrettyPrinted);
+                document.getElementById('status').textContent = 'success (via proxy)';
+                loadingIndicator.style.display = 'none';
+
+            } catch (error) {
+                console.error('failed to fetch JSON:', error);
+                showError(`failed to load JSON from ${url}: ${error.message}`);
+                loadingIndicator.style.display = 'none';
+            }
+
+            prettyPrintButton.addEventListener('click', () => {
+                isPrettyPrinted = !isPrettyPrinted;
+                renderJson(fetchedData, isPrettyPrinted);
+                prettyPrintButton.innerHTML = isPrettyPrinted ?
+                    '<i class="fas fa-compress"></i> compact' :
+                    '<i class="fas fa-expand"></i> pretty-print';
+            });
+        }
+
+        let searchResults = [];
+        let currentSearchIndex = -1;
+
+        function performSearch(searchTerm) {
+            clearSearch();
+
+            if (!searchTerm) return;
+
+            const contentEl = document.querySelector('.json-container');
+            if (!contentEl) return;
+
+            const text = contentEl.textContent;
+            const positions = [];
+            let match;
+            const searchRegex = new RegExp(searchTerm, 'gi');
+
+            while ((match = searchRegex.exec(text)) !== null) {
+                positions.push(match.index);
+            }
+
+            if (positions.length > 0) {
+
+                positions.forEach((position, index) => {
+                    const range = document.createRange();
+                    const startNode = findNodeAtPosition(contentEl, position);
+                    if (!startNode) return;
+
+                    const endNode = findNodeAtPosition(contentEl, position + searchTerm.length);
+                    if (!endNode) return;
+
+                    range.setStart(startNode.node, startNode.offset);
+                    range.setEnd(endNode.node, endNode.offset);
+
+                    const span = document.createElement('span');
+                    span.className = 'search-highlight';
+                    span.dataset.searchIndex = index;
+                    range.surroundContents(span);
+                });
+
+                searchResults = document.querySelectorAll('.search-highlight');
+                currentSearchIndex = -1;
+                navigateSearch('next');
+            }
+
+            updateSearchCount();
+        }
+
+        function findNodeAtPosition(root, targetPosition) {
+            let currentPosition = 0;
+
+            function traverse(node) {
+                if (node.nodeType === Node.TEXT_NODE) {
+                    const length = node.textContent.length;
+                    if (currentPosition <= targetPosition && targetPosition <= currentPosition + length) {
+                        return {
+                            node: node,
+                            offset: targetPosition - currentPosition
+                        };
+                    }
+                    currentPosition += length;
+                } else {
+                    for (const child of node.childNodes) {
+                        const result = traverse(child);
+                        if (result) return result;
+                    }
+                }
+                return null;
+            }
+
+            return traverse(root);
+        }
+
+        function clearSearch() {
+            const highlights = document.querySelectorAll('.search-highlight');
+            highlights.forEach(el => {
+                const parent = el.parentNode;
+                parent.replaceChild(document.createTextNode(el.textContent), el);
+                parent.normalize();
+            });
+            searchResults = [];
+            currentSearchIndex = -1;
+            updateSearchCount();
+        }
+
+        function navigateSearch(direction) {
+            if (searchResults.length === 0) return;
+
+            if (currentSearchIndex >= 0) {
+                searchResults[currentSearchIndex].classList.remove('search-highlight-active');
+            }
+
+            if (direction === 'next') {
+                currentSearchIndex = (currentSearchIndex + 1) % searchResults.length;
+            } else {
+                currentSearchIndex = (currentSearchIndex - 1 + searchResults.length) % searchResults.length;
+            }
+
+            const currentResult = searchResults[currentSearchIndex];
+            currentResult.classList.add('search-highlight-active');
+            currentResult.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            updateSearchCount();
+        }
+
+        function updateSearchCount() {
+            const countEl = document.getElementById('search-count');
+            if (searchResults.length > 0) {
+                countEl.textContent = `${currentSearchIndex + 1} of ${searchResults.length}`;
+            } else {
+                countEl.textContent = '0 results';
+            }
+        }
+
+        function initializeSearch() {
+            const searchInput = document.getElementById('search-input');
+            const searchPrev = document.getElementById('search-prev');
+            const searchNext = document.getElementById('search-next');
+
+            let searchTimeout;
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    performSearch(e.target.value);
+                }, 300);
+            });
+
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    if (e.shiftKey) {
+                        navigateSearch('prev');
+                    } else {
+                        navigateSearch('next');
+                    }
+                }
+            });
+
+            searchPrev.addEventListener('click', () => navigateSearch('prev'));
+            searchNext.addEventListener('click', () => navigateSearch('next'));
+        }
+        function initializeButtons() {
+            const copyButton = document.getElementById('copy-button');
+            const downloadButton = document.getElementById('download-button');
+
+            copyButton.addEventListener('click', async () => {
+                try {
+                    const jsonContent = document.querySelector('.json-container').textContent;
+                    await navigator.clipboard.writeText(jsonContent);
+
+                    copyButton.innerHTML = '<i class="fas fa-check"></i> copied!';
+                    setTimeout(() => {
+                        copyButton.innerHTML = '<i class="fas fa-copy"></i> copy';
+                    }, 2000);
+                } catch (err) {
+                    console.error('Failed to copy:', err);
+                    copyButton.innerHTML = '<i class="fas fa-times"></i> error';
+                    setTimeout(() => {
+                        copyButton.innerHTML = '<i class="fas fa-copy"></i> copy';
+                    }, 2000);
+                }
+            });
+
+            downloadButton.addEventListener('click', () => {
+                try {
+                    const jsonContent = document.querySelector('.json-container').textContent;
+                    const blob = new Blob([jsonContent], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `wow.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+
+                    downloadButton.innerHTML = '<i class="fas fa-check"></i> downloaded!';
+                    setTimeout(() => {
+                        downloadButton.innerHTML = '<i class="fas fa-download"></i> download';
+                    }, 2000);
+                } catch (err) {
+                    console.error('Failed to download:', err);
+                    downloadButton.innerHTML = '<i class="fas fa-times"></i> error';
+                    setTimeout(() => {
+                        downloadButton.innerHTML = '<i class="fas fa-download"></i> download';
+                    }, 2000);
+                }
+            });
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            init();
+            initializeSearch();
+            initializeButtons();
+        });
+    </script>
+</body>
+
+</html>
