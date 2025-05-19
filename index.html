@@ -49,7 +49,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Consolas:wght@400;700&family=Menlo&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="icon" type="image/x-icon" href="https://cdn1.iconfinder.com/data/icons/carbon-design-system-vol-5/32/JSON-256.png">
+    <link rel="icon" type="image/x-icon"
+        href="https://cdn1.iconfinder.com/data/icons/carbon-design-system-vol-5/32/JSON-256.png">
     <style>
         body {
             font-family: 'Consolas', 'Menlo', monospace;
@@ -88,13 +89,43 @@
             font-size: 12px;
         }
 
-        .url-display {
-            font-size: 12px;
-            color: #75bfff;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+        .url-container {
+            display: flex;
+            align-items: center;
             max-width: 300px;
+        }
+
+        .url-input {
+            background-color: #1e1e1e;
+            border: 1px solid #3c3c3c;
+            border-radius: 3px;
+            color: #75bfff;
+            font-family: inherit;
+            font-size: 12px;
+            padding: 4px 8px;
+            width: 280px;
+            outline: none;
+        }
+
+        .url-input:focus {
+            border-color: #75bfff;
+        }
+
+        .url-button {
+            background-color: #3c3c3c;
+            border: 1px solid #888;
+            border-radius: 3px;
+            color: #e8e8e8;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 12px;
+            padding: 4px 8px;
+            outline: none;
+            margin-left: 5px;
+        }
+
+        .url-button:hover {
+            background-color: #4c4c4c;
         }
 
         .json-container {
@@ -273,7 +304,10 @@
 <body>
     <div class="header">
         <div class="header-content">
-            <div class="url-display" id="current-url">loading</div>
+            <div class="url-container">
+                <input type="text" id="url-input" class="url-input" placeholder="Enter JSON URL">
+                <button id="load-url" class="url-button">Load</button>
+            </div>
             <div class="action-buttons">
                 <button class="action-button" id="copy-button">
                     <i class="fas fa-copy"></i>
@@ -298,7 +332,7 @@
         <div class="status-container" id="status">ready</div>
     </div>
     <div id="content">
-        <div class="loading" id="loading">loading json..</div>
+        <div class="loading" id="loading">waiting for url...</div>
     </div>
 
     <script>
@@ -306,11 +340,13 @@
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get(param);
         }
+
         const corsProxies = [
             'https://corsproxy.io/?',
             'https://cors-anywhere.herokuapp.com/',
             'https://api.allorigins.win/raw?url='
         ];
+
         function escapeHTML(str) {
             if (typeof str !== 'string') return str;
             return str
@@ -320,6 +356,7 @@
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#039;');
         }
+
         function syntaxHighlightJson(jsonString, prettyPrint = false) {
             try {
                 const parsed = JSON.parse(jsonString);
@@ -328,6 +365,7 @@
                 return `<span class="json-string">"${escapeHTML(jsonString)}"</span>`;
             }
         }
+
         function syntaxHighlightParsedJson(data, prettyPrint = false, depth = 0) {
             const baseIndent = '    '.repeat(depth);
             const childIndent = '    '.repeat(depth + 1);
@@ -430,70 +468,51 @@
             }
         }
 
-        async function init() {
-            const url = getQueryParam('url');
-            const urlDisplay = document.getElementById('current-url');
-            const prettyPrintButton = document.getElementById('pretty-print-button');
-            let isPrettyPrinted = false;
-            const loadingIndicator = document.getElementById('loading');
-            let fetchedData = null;
-
+        async function loadJsonFromUrl(url) {
             if (!url) {
-                showError('no url given, add ?url=https://example.com/data.json to the url');
-                urlDisplay.textContent = 'no url given';
-                loadingIndicator.style.display = 'none';
+                showError('Please enter a URL');
                 return;
             }
 
-            urlDisplay.textContent = url;
+            const urlInput = document.getElementById('url-input');
+            urlInput.value = url;
+
+            updateUrlWithoutReload(url);
+
+            document.getElementById('status').textContent = 'fetching..';
+            const contentEl = document.getElementById('content');
+            contentEl.innerHTML = `<div class="loading" id="loading">loading json..</div>`;
 
             try {
-                document.getElementById('status').textContent = 'fetching..';
-                loadingIndicator.style.display = 'flex';
+
                 try {
                     const directResponse = await fetch(url);
                     if (directResponse.ok) {
                         const text = await directResponse.text();
+                        let data;
                         try {
-                            fetchedData = JSON.parse(text);
+                            data = JSON.parse(text);
                         } catch (e) {
-                            fetchedData = text;
+                            data = text;
                         }
-                        renderJson(fetchedData, isPrettyPrinted);
+                        renderJson(data, isPrettyPrinted);
                         document.getElementById('status').textContent = 'success (direct)';
-                        loadingIndicator.style.display = 'none';
-
-                        prettyPrintButton.addEventListener('click', () => {
-                            isPrettyPrinted = !isPrettyPrinted;
-                            renderJson(fetchedData, isPrettyPrinted);
-                            prettyPrintButton.innerHTML = isPrettyPrinted ?
-                                '<i class="fas fa-compress"></i> Compact' :
-                                '<i class="fas fa-expand"></i> Pretty-print';
-                        });
-                        return;
+                        return data;
                     }
                 } catch (directError) {
                     console.log('direct fetch failed, trying proxies:', directError);
                 }
 
-                fetchedData = await fetchWithCorsProxy(url);
-                renderJson(fetchedData, isPrettyPrinted);
+                const data = await fetchWithCorsProxy(url);
+                renderJson(data, isPrettyPrinted);
                 document.getElementById('status').textContent = 'success (via proxy)';
-                loadingIndicator.style.display = 'none';
+                return data;
 
             } catch (error) {
                 console.error('failed to fetch JSON:', error);
                 showError(`failed to load JSON from ${url}: ${error.message}`);
-                loadingIndicator.style.display = 'none';
+                return null;
             }
-
-            prettyPrintButton.addEventListener('click', () => {
-                isPrettyPrinted = !isPrettyPrinted;
-                renderJson(fetchedData, isPrettyPrinted);
-                prettyPrintButton.innerHTML = isPrettyPrinted ?
-                    '<i class="fas fa-compress"></i> compact' :
-                    '<i class="fas fa-expand"></i> pretty-print';
-            });
         }
 
         let searchResults = [];
@@ -517,7 +536,6 @@
             }
 
             if (positions.length > 0) {
-
                 positions.forEach((position, index) => {
                     const range = document.createRange();
                     const startNode = findNodeAtPosition(contentEl, position);
@@ -635,6 +653,7 @@
             searchPrev.addEventListener('click', () => navigateSearch('prev'));
             searchNext.addEventListener('click', () => navigateSearch('next'));
         }
+
         function initializeButtons() {
             const copyButton = document.getElementById('copy-button');
             const downloadButton = document.getElementById('download-button');
@@ -664,7 +683,8 @@
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = `wow.json`;
+                    const downloadFilename = document.getElementById('url-input').value.split('/').pop() || 'data.json';
+                    a.download = downloadFilename;
                     document.body.appendChild(a);
                     a.click();
                     document.body.removeChild(a);
@@ -684,10 +704,69 @@
             });
         }
 
+        let fetchedData = null;
+        let isPrettyPrinted = false;
+
+        function initializePrettyPrintButton() {
+            const prettyPrintButton = document.getElementById('pretty-print-button');
+
+            prettyPrintButton.addEventListener('click', () => {
+                isPrettyPrinted = !isPrettyPrinted;
+                if (fetchedData) {
+                    renderJson(fetchedData, isPrettyPrinted);
+                    prettyPrintButton.innerHTML = isPrettyPrinted ?
+                        '<i class="fas fa-compress"></i> compact' :
+                        '<i class="fas fa-expand"></i> pretty-print';
+                }
+            });
+        }
+
+        function initializeUrlInput() {
+            const urlInput = document.getElementById('url-input');
+            const loadButton = document.getElementById('load-url');
+
+            urlInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    const url = urlInput.value.trim();
+                    if (url) {
+                        loadJsonFromUrl(url).then(data => {
+                            if (data) fetchedData = data;
+                        });
+                    }
+                }
+            });
+
+            loadButton.addEventListener('click', () => {
+                const url = urlInput.value.trim();
+                if (url) {
+                    loadJsonFromUrl(url).then(data => {
+                        if (data) fetchedData = data;
+                    });
+                }
+            });
+
+            const urlParam = getQueryParam('url');
+            if (urlParam) {
+                urlInput.value = urlParam;
+                loadJsonFromUrl(urlParam).then(data => {
+                    if (data) fetchedData = data;
+                });
+            }
+        }
+
+        function updateUrlWithoutReload(url) {
+            if (url) {
+                const newUrl = new URL(window.location.href);
+                newUrl.searchParams.set('url', url);
+                window.history.pushState({ url: url }, '', newUrl.toString());
+            }
+        }
+
         window.addEventListener('DOMContentLoaded', () => {
-            init();
+            initializeUrlInput();
             initializeSearch();
             initializeButtons();
+            initializePrettyPrintButton();
         });
     </script>
 </body>
