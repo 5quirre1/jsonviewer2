@@ -532,6 +532,15 @@
                 if (!response.ok) {
                     throw new Error(`http error, status: ${response.status}`);
                 }
+
+                const contentType = response.headers.get('content-type').toLowerCase();
+
+                if (contentType.match(/^(image|video|audio)\//)) {
+                    renderMedia(proxyUrl, contentType);
+                    document.getElementById('status').textContent = `success (${contentType} via proxy)`;
+                    return null;
+                }
+
                 const text = await response.text();
                 try {
                     const json = JSON.parse(text);
