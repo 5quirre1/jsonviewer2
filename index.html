@@ -298,6 +298,45 @@
             display: flex;
             gap: 5px;
         }
+
+        .media-container {
+            margin-top: 33px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            max-height: 80vh;
+            overflow: auto;
+        }
+
+        .media-container img,
+        .media-container video,
+        .media-container audio {
+            max-width: 100%;
+            max-height: 70vh;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            background-color: #000;
+            border-radius: 4px;
+        }
+
+        .media-container audio {
+            max-height: none;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .media-info {
+            color: #888;
+            font-size: 12px;
+            text-align: center;
+            padding: 8px;
+            background-color: #252526;
+            border-radius: 4px;
+            margin-top: 8px;
+        }
     </style>
 </head>
 
@@ -437,6 +476,44 @@
             }
             contentEl.innerHTML = `<div class="json-container">${prettyPrint ? '<pre>' + highlightedJSON + '</pre>' : highlightedJSON}</div>`;
         }
+        function renderMedia(url, contentType) {
+            const contentEl = document.getElementById('content');
+            let mediaContent = '';
+
+            if (contentType.startsWith('image/')) {
+                mediaContent = `
+            <div class="media-container">
+                <img src="${url}" alt="Media content" style="max-width: 100%; height: auto;">
+                <div class="media-info">
+                    <p>Content Type: ${contentType}</p>
+                </div>
+            </div>`;
+            } else if (contentType.startsWith('video/')) {
+                mediaContent = `
+            <div class="media-container">
+                <video controls style="max-width: 100%;">
+                    <source src="${url}" type="${contentType}">
+                    your browser sickens me
+                </video>
+                <div class="media-info">
+                    <p>Content Type: ${contentType}</p>
+                </div>
+            </div>`;
+            } else if (contentType.startsWith('audio/')) {
+                mediaContent = `
+            <div class="media-container">
+                <audio controls>
+                    <source src="${url}" type="${contentType}">
+                    your browser sickens me
+                </audio>
+                <div class="media-info">
+                    <p>Content Type: ${contentType}</p>
+                </div>
+            </div>`;
+            }
+
+            contentEl.innerHTML = mediaContent;
+        }
 
         function showError(message) {
             const contentEl = document.getElementById('content');
@@ -481,13 +558,20 @@
 
             document.getElementById('status').textContent = 'fetching..';
             const contentEl = document.getElementById('content');
-            contentEl.innerHTML = `<div class="loading" id="loading">loading json..</div>`;
+            contentEl.innerHTML = `<div class="loading" id="loading">loading content..</div>`;
 
             try {
-
                 try {
                     const directResponse = await fetch(url);
                     if (directResponse.ok) {
+                        const contentType = directResponse.headers.get('content-type').toLowerCase();
+
+                        if (contentType.match(/^(image|video|audio)\//)) {
+                            renderMedia(url, contentType);
+                            document.getElementById('status').textContent = `success (${contentType})`;
+                            return null;
+                        }
+
                         const text = await directResponse.text();
                         let data;
                         try {
@@ -509,8 +593,8 @@
                 return data;
 
             } catch (error) {
-                console.error('failed to fetch JSON:', error);
-                showError(`failed to load JSON from ${url}: ${error.message}`);
+                console.error('failed to fetch content:', error);
+                showError(`failed to load content from ${url}: ${error.message}`);
                 return null;
             }
         }
