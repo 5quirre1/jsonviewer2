@@ -38,7 +38,6 @@
 
 -->
 
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -52,14 +51,28 @@
     <link rel="icon" type="image/x-icon"
         href="https://cdn1.iconfinder.com/data/icons/carbon-design-system-vol-5/32/JSON-256.png">
     <style>
+        :root {
+            --bg-base: #292522;
+            --bg-primary: #3d2f24;
+            --bg-secondary: #4a3a2f;
+            --bg-accent: #6f4e37;
+            --text-base: #e4d8c5;
+            --text-primary: #e4d8c5;
+            --text-secondary: #d1c7b7;
+            --text-accent: #d1b38b;
+            --border-color: #5a4a3a;
+            --highlight: #8b6d4b;
+            --highlight-active: #a8835a;
+        }
+
         body {
             font-family: 'Consolas', 'Menlo', monospace;
             font-size: 13px;
             line-height: 18px;
             margin: 0;
             padding: 0;
-            color: #e8e8e8;
-            background-color: #1e1e1e;
+            color: var(--text-primary);
+            background-color: var(--bg-base);
             overflow-x: hidden;
             width: 100%;
         }
@@ -69,8 +82,8 @@
             top: 0;
             left: 0;
             right: 0;
-            background-color: #252526;
-            border-bottom: 1px solid #3c3c3c;
+            background-color: var(--bg-primary);
+            border-bottom: 1px solid var(--border-color);
             height: 32px;
             padding: 0 12px;
             display: flex;
@@ -87,6 +100,7 @@
 
         .status-container {
             font-size: 12px;
+            color: var(--text-secondary);
         }
 
         .url-container {
@@ -96,36 +110,39 @@
         }
 
         .url-input {
-            background-color: #1e1e1e;
-            border: 1px solid #3c3c3c;
-            border-radius: 3px;
-            color: #75bfff;
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            color: var(--text-accent);
             font-family: inherit;
             font-size: 12px;
             padding: 4px 8px;
             width: 280px;
             outline: none;
+            transition: all 0.2s;
         }
 
         .url-input:focus {
-            border-color: #75bfff;
+            border-color: var(--text-accent);
+            box-shadow: 0 0 0 1px var(--text-accent);
         }
 
         .url-button {
-            background-color: #3c3c3c;
-            border: 1px solid #888;
-            border-radius: 3px;
-            color: #e8e8e8;
+            background-color: var(--bg-accent);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            color: var(--text-primary);
             cursor: pointer;
             font-family: inherit;
             font-size: 12px;
             padding: 4px 8px;
             outline: none;
             margin-left: 5px;
+            transition: all 0.2s;
         }
 
         .url-button:hover {
-            background-color: #4c4c4c;
+            background-color: var(--highlight);
         }
 
         .json-container {
@@ -152,21 +169,21 @@
             align-items: center;
             height: calc(100vh - 33px);
             font-size: 16px;
-            color: #75bfff;
+            color: var(--text-accent);
         }
 
         .error {
             margin-top: 33px;
             padding: 12px;
-            color: #f44336;
+            color: #e57373;
         }
 
         .json-string {
-            color: #ce9178;
+            color: #d1b38b;
         }
 
         .json-number {
-            color: #b5cea8;
+            color: #a5b38b;
         }
 
         .json-boolean {
@@ -174,48 +191,15 @@
         }
 
         .json-null {
-            color: #569cd6;
+            color: #8ba5d1;
         }
 
         .json-key {
-            color: #4ec9b0;
+            color: #8bd1b3;
         }
 
         .json-punctuation {
-            color: #e8e8e8;
-        }
-
-        .pretty-print-checkbox {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .pretty-print-checkbox input[type="checkbox"] {
-            width: 16px;
-            height: 16px;
-            appearance: none;
-            border: 1px solid #888;
-            border-radius: 3px;
-            outline: none;
-            cursor: pointer;
-            background-color: #333;
-        }
-
-        .pretty-print-checkbox input[type="checkbox"]:checked {
-            background-color: #4CAF50;
-            border-color: #4CAF50;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Cpath fill='%23fff' d='M6.564.752l-6.14 6.14L.21 7.646 3.41 4.446 6.564.752z'/%3E%3C/svg%3E");
-            background-size: 80%;
-            background-position: center;
-            background-repeat: no-repeat;
-        }
-
-        .pretty-print-checkbox label {
-            font-size: 12px;
-            color: #eee;
-            cursor: pointer;
-            user-select: none;
+            color: var(--text-secondary);
         }
 
         .search-container {
@@ -225,56 +209,62 @@
         }
 
         .search-input {
-            background-color: #3c3c3c;
-            border: 1px solid #888;
-            border-radius: 3px;
-            color: #e8e8e8;
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            color: var(--text-primary);
             font-family: inherit;
             font-size: 12px;
             padding: 4px 8px;
             width: 200px;
             outline: none;
+            transition: all 0.2s;
         }
 
         .search-input:focus {
-            border-color: #75bfff;
+            border-color: var(--text-accent);
+            box-shadow: 0 0 0 1px var(--text-accent);
         }
 
         .search-button {
-            background-color: #3c3c3c;
-            border: 1px solid #888;
-            border-radius: 3px;
-            color: #e8e8e8;
+            background-color: var(--bg-accent);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            color: var(--text-primary);
             cursor: pointer;
             font-family: inherit;
             font-size: 12px;
             padding: 4px 8px;
             outline: none;
+            transition: all 0.2s;
         }
 
         .search-button:hover {
-            background-color: #4c4c4c;
+            background-color: var(--highlight);
         }
 
         .search-count {
-            color: #888;
+            color: var(--text-secondary);
             font-size: 12px;
             min-width: 60px;
         }
 
         .search-highlight {
-            background-color: #575728;
+            background-color: var(--bg-accent);
+            border-radius: 2px;
+            padding: 0 2px;
         }
 
         .search-highlight-active {
-            background-color: #875b00;
+            background-color: var(--highlight-active);
+            font-weight: bold;
         }
 
         .action-button {
-            background-color: #3c3c3c;
-            border: 1px solid #888;
-            border-radius: 3px;
-            color: #e8e8e8;
+            background-color: var(--bg-accent);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            color: var(--text-primary);
             cursor: pointer;
             font-family: inherit;
             font-size: 12px;
@@ -283,11 +273,11 @@
             display: flex;
             align-items: center;
             gap: 5px;
-            transition: background-color 0.2s;
+            transition: all 0.2s;
         }
 
         .action-button:hover {
-            background-color: #4c4c4c;
+            background-color: var(--highlight);
         }
 
         .action-button i {
@@ -318,8 +308,9 @@
             width: auto;
             height: auto;
             object-fit: contain;
-            background-color: #000;
+            background-color: var(--bg-primary);
             border-radius: 4px;
+            border: 1px solid var(--border-color);
         }
 
         .media-container audio {
@@ -329,13 +320,42 @@
         }
 
         .media-info {
-            color: #888;
+            color: var(--text-secondary);
             font-size: 12px;
             text-align: center;
             padding: 8px;
-            background-color: #252526;
+            background-color: var(--bg-primary);
             border-radius: 4px;
             margin-top: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .pretty-print-checkbox input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            appearance: none;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            outline: none;
+            cursor: pointer;
+            background-color: var(--bg-secondary);
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        .pretty-print-checkbox input[type="checkbox"]:checked {
+            background-color: var(--bg-accent);
+            border-color: var(--highlight);
+        }
+
+        .pretty-print-checkbox input[type="checkbox"]:checked::after {
+            content: "✓";
+            position: absolute;
+            color: var(--text-primary);
+            font-size: 12px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
         }
     </style>
 </head>
