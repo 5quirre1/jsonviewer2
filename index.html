@@ -75,6 +75,7 @@
             background-color: var(--bg-base);
             overflow-x: hidden;
             width: 100%;
+            min-height: 100vh;
         }
 
         .header {
@@ -357,10 +358,73 @@
             left: 50%;
             transform: translate(-50%, -50%);
         }
+
+        .drop-zone {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(73, 62, 47, 0.9);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            border: 4px dashed var(--highlight);
+        }
+
+        .drop-zone.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .drop-zone-icon {
+            font-size: 64px;
+            color: var(--text-accent);
+            margin-bottom: 20px;
+            animation: pulse 1.5s infinite;
+        }
+
+        .drop-zone-text {
+            font-size: 24px;
+            color: var(--text-accent);
+            text-align: center;
+            max-width: 80%;
+        }
+
+        .drop-zone-hint {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 20px;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
     </style>
 </head>
 
 <body>
+    <div class="drop-zone" id="dropZone">
+        <i class="fas fa-file-import drop-zone-icon"></i>
+        <div class="drop-zone-text">Drop JSON file here</div>
+        <div class="drop-zone-hint">Supported formats: .json, .txt</div>
+    </div>
+
     <div class="header">
         <div class="header-content">
             <div class="url-container">
@@ -391,7 +455,7 @@
         <div class="status-container" id="status">ready</div>
     </div>
     <div id="content">
-        <div class="loading" id="loading">waiting for url...</div>
+        <div class="loading" id="loading">waiting for url or file...</div>
     </div>
 
     <script>
@@ -866,11 +930,140 @@
             }
         }
 
+        function initializeDragAndDrop() {
+            const dropZone = document.getElementById('dropZone');
+            const contentEl = document.getElementById('content');
+            const statusEl = document.getElementById('status');
+            let dragCounter = 0;
+
+            document.querySelector('.drop-zone-text').textContent = 'drop JSON or media file here';
+            document.querySelector('.drop-zone-hint').textContent = 'supported formats: .json, .txt, .jpg, .png, .gif, .mp4, .webm, .mp3, .wav';
+
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                document.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            document.addEventListener('dragenter', function (e) {
+                dragCounter++;
+                dropZone.classList.add('active');
+            });
+
+            document.addEventListener('dragover', function (e) {
+                dropZone.classList.add('active');
+            });
+
+            document.addEventListener('dragleave', function (e) {
+                dragCounter--;
+                if (dragCounter === 0) {
+                    dropZone.classList.remove('active');
+                }
+            });
+
+            document.addEventListener('drop', function (e) {
+                dragCounter = 0;
+                dropZone.classList.remove('active');
+                handleDrop(e);
+            });
+
+            async function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+
+                if (files.length > 0) {
+                    const file = files[0];
+                    const fileName = file.name.toLowerCase();
+
+                    if (fileName.endsWith('.json') || fileName.endsWith('.txt')) {
+                        statusEl.textContent = `loading ${file.name}...`;
+                        contentEl.innerHTML = `<div class="loading">loading ${file.name}...</div>`;
+
+                        try {
+                            const fileContent = await readFile(file);
+                            try {
+                                const jsonData = JSON.parse(fileContent);
+                                fetchedData = jsonData;
+                                renderJson(jsonData, isPrettyPrinted);
+                                statusEl.textContent = `loaded ${file.name}`;
+
+                                updateUrlWithoutReload(file.name);
+                            } catch (e) {
+                                renderJson(fileContent, isPrettyPrinted);
+                                statusEl.textContent = `loaded ${file.name} (as text)`;
+                            }
+                        } catch (error) {
+                            showError(`failed to read file: ${error.message}`);
+                            statusEl.textContent = 'error loading file';
+                        }
+                    } else if (isMediaFile(file)) {
+                        statusEl.textContent = `loading ${file.name}...`;
+                        contentEl.innerHTML = `<div class="loading">loading ${file.name}...</div>`;
+
+                        try {
+                            const fileUrl = URL.createObjectURL(file);
+                            const contentType = getContentTypeFromFileName(fileName);
+
+                            renderMedia(fileUrl, contentType);
+                            statusEl.textContent = `loaded ${file.name}`;
+
+                            updateUrlWithoutReload(file.name);
+                        } catch (error) {
+                            showError(`Failed to load media: ${error.message}`);
+                            statusEl.textContent = 'error loading media';
+                        }
+                    } else {
+                        showError('unsupported file type, please drop a JSON, text, or media file');
+                        statusEl.textContent = 'invalid file type';
+                    }
+                }
+            }
+
+            function isMediaFile(file) {
+                const fileName = file.name.toLowerCase();
+                const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+                const videoExtensions = ['.mp4', '.webm', '.ogg'];
+                const audioExtensions = ['.mp3', '.wav', '.ogg'];
+
+                return [...imageExtensions, ...videoExtensions, ...audioExtensions].some(ext =>
+                    fileName.endsWith(ext)
+                );
+            }
+
+            function getContentTypeFromFileName(fileName) {
+                if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')) return 'image/jpeg';
+                if (fileName.endsWith('.png')) return 'image/png';
+                if (fileName.endsWith('.gif')) return 'image/gif';
+                if (fileName.endsWith('.webp')) return 'image/webp';
+                if (fileName.endsWith('.mp4')) return 'video/mp4';
+                if (fileName.endsWith('.webm')) return 'video/webm';
+                if (fileName.endsWith('.ogg')) return 'video/ogg';
+                if (fileName.endsWith('.mp3')) return 'audio/mp3';
+                if (fileName.endsWith('.wav')) return 'audio/wav';
+                return 'application/octet-stream';
+            }
+
+            function readFile(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (event) => resolve(event.target.result);
+                    reader.onerror = (error) => reject(error);
+                    reader.readAsText(file);
+                });
+            }
+        }
+
         window.addEventListener('DOMContentLoaded', () => {
             initializeUrlInput();
             initializeSearch();
             initializeButtons();
             initializePrettyPrintButton();
+            initializeDragAndDrop();
+
+            document.getElementById('loading').textContent = 'waiting for URL or file drop...';
         });
     </script>
 </body>
